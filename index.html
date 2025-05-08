@@ -1,53 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Your existing head content -->
+  <meta charset="UTF-8">
+  <title>Whitelist</title>
   <style>
-    /* Your existing styles */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: linear-gradient(-45deg, #1a1a2e, #16213e, #0f3460, #533483);
+      background-size: 400% 400%;
+      height: 100%;
+      width: 100%;
+      color: white;
+      font-family: sans-serif;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    #overlay {
+      position: absolute;
+      z-index: 1;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    }
+
+    button {
+      padding: 15px 30px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      background-color: rgba(255,255,255,0.9);
+      color: #0f3460;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     #status {
       margin-top: 20px;
-      min-height: 20px;
-      color: #ccc;
+      min-height: 24px;
+      color: #fff;
+      font-size: 16px;
+      max-width: 80%;
+      text-shadow: 0 1px 3px rgba(0,0,0,0.5);
     }
   </style>
 </head>
 <body>
-  <!-- Your existing body content -->
   <div id="overlay">
-    <h1>whitelist yourself</h1>
-    <button onclick="sendIP()">Click here</button>
+    <h1>Whitelist Yourself</h1>
+    <button id="submitBtn" onclick="sendIP()">Submit My IP</button>
     <div id="status"></div>
   </div>
 
   <script>
-    // Your existing starfield code
-    
-    // IP sending to webhook
     async function sendIP() {
+      const btn = document.getElementById('submitBtn');
       const statusEl = document.getElementById('status');
-      statusEl.textContent = "Processing...";
+      
+      btn.disabled = true;
+      statusEl.textContent = "Detecting your IP address...";
       
       try {
-        // Get IP address
-        const ipResponse = await fetch("https://api.ipify.org?format=json");
-        if (!ipResponse.ok) throw new Error("Couldn't get IP address");
-        const { ip } = await ipResponse.json();
+        // First try a direct IP detection
+        let ipDetectionSuccess = false;
+        let ip = '';
         
-        statusEl.textContent = "Sending your IP...";
+        // Try ipify first
+        try {
+          const response = await fetch('https://api.ipify.org?format=json', {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            ip = data.ip;
+            ipDetectionSuccess = true;
+          }
+        } catch (e) {}
         
-        // Send to webhook (consider using a proxy service instead)
-        const webhookResponse = await fetch("https://discord.com/api/webhooks/1370044107916972073/2Xxxss050J9s8wNRsGXXEvWWg4DZHwxVrrroay07509h6pbmw3rIA4p6GPz17P7sfKCd", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: `Uusi IP: ${ip}` })
+        // If ipify failed, try another service
+        if (!ipDetectionSuccess) {
+          try {
+            const response = await fetch('https://ipapi.co/json/', {
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+            if (response.ok) {
+              const data = await response.json();
+              ip = data.ip;
+              ipDetectionSuccess = true;
+            }
+          } catch (e) {}
+        }
+        
+        if (!ipDetectionSuccess) {
+          throw new Error("Couldn't detect your IP address");
+        }
+        
+        statusEl.textContent = "Submitting your IP...";
+        
+        // Use a CORS proxy to bypass GitHub restrictions
+        // Note: For production, set up your own proxy server
+        const webhookUrl = "https://discord.com/api/webhooks/1370044107916972073/2Xxxss050J9s8wNRsGXXEvWWg4DZHwxVrrroay07509h6pbmw3rIA4p6GPz17P7sfKCd";
+        const proxyUrl = `https://cors-anywhere.herokuapp.com/${webhookUrl}`;
+        
+        const response = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest' // Required by some CORS proxies
+          },
+          body: JSON.stringify({
+            content: `New IP submitted: ${ip}`
+          })
         });
         
-        if (!webhookResponse.ok) throw new Error("Failed to send to webhook");
+        if (!response.ok) {
+          throw new Error("Submission failed - please try again later");
+        }
         
         statusEl.textContent = "Success! Your IP has been submitted.";
+        btn.textContent = "Submitted ✓";
       } catch (error) {
         console.error("Error:", error);
         statusEl.textContent = "Error: " + error.message;
+        btn.disabled = false;
+        btn.textContent = "Try Again";
       }
     }
   </script>
