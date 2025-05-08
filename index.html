@@ -101,68 +101,30 @@
     <button id="fetchIpBtn" onclick="fetchIpAddress()">Fetch IP Address</button>
     
     <div id="status"></div>
-    
-    <div>
-      <p>Paste your IP below if needed, and send to the server:</p>
-      <input type="text" id="ipInput" placeholder="Paste your IP address here">
-      <button id="sendButton" onclick="sendToWebhook()">Send IP to Webhook</button>
-    </div>
+
+    <input type="text" id="ipInput" placeholder="Enter IP address" />
+    <button id="sendButton" onclick="sendRequest()" disabled>Send Request</button>
   </div>
 
   <script>
-    async function fetchIpAddress() {
-      const ipAddressDiv = document.getElementById('ipAddress');
-      const fetchButton = document.getElementById('fetchIpBtn');
-      
-      fetchButton.disabled = true; // Disable button while fetching the IP
-      ipAddressDiv.textContent = "Fetching your IP address...";
-
-      try {
-        const response = await fetch('https://api.ipify.org?format=json');
-        if (!response.ok) throw new Error('IP fetch failed');
-        
-        const data = await response.json();
-        ipAddressDiv.textContent = `Your IP Address is: ${data.ip}`;
-
-        fetchButton.disabled = false; // Re-enable button after fetching IP
-      } catch (err) {
-        console.error(err);
-        ipAddressDiv.textContent = "Error: Unable to fetch IP address.";
-        fetchButton.disabled = false; // Re-enable button if error occurs
-      }
+    function fetchIpAddress() {
+      fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('ipAddress').textContent = data.ip;
+          document.getElementById('sendButton').disabled = false; // Enable the button after IP is fetched
+        })
+        .catch(error => {
+          document.getElementById('ipAddress').textContent = 'Failed to fetch IP address.';
+        });
     }
 
-    async function sendToWebhook() {
-      const ipInput = document.getElementById('ipInput').value;
-      const statusDiv = document.getElementById('status');
-      const sendButton = document.getElementById('sendButton');
-
-      if (!ipInput) {
-        statusDiv.textContent = "Please paste a valid IP address first.";
-        return;
-      }
-
-      sendButton.disabled = true;
-      statusDiv.textContent = "Sending IP address to webhook...";
-
-      try {
-        const webhookUrl = "https://discord.com/api/webhooks/1370044107916972073/2Xxxss050J9s8wNRsGXXEvWWg4DZHwxVrrroay07509h6pbmw3rIA4p6GPz17P7sfKCd";
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            content: `New access request from IP: ${ipInput}`
-          })
-        });
-
-        if (!response.ok) throw new Error("Webhook request failed");
-
-        statusDiv.textContent = "✓ IP address sent successfully!";
-        sendButton.disabled = false;
-      } catch (err) {
-        console.error(err);
-        statusDiv.textContent = "Error: " + err.message;
-        sendButton.disabled = false;
+    function sendRequest() {
+      const ipAddress = document.getElementById('ipInput').value;
+      if (ipAddress) {
+        document.getElementById('status').textContent = 'Request sent for IP: ' + ipAddress;
+      } else {
+        document.getElementById('status').textContent = 'Please enter a valid IP address.';
       }
     }
   </script>
