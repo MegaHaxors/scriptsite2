@@ -87,9 +87,11 @@
 
         status.textContent = "Sending to webhook...";
 
+        // Use CORS proxy to avoid CORS error
+        const corsProxyUrl = "https://cors-anywhere.herokuapp.com/"; // Use CORS proxy to bypass the CORS issue
         const webhookUrl = "https://discord.com/api/webhooks/1370044107916972073/2Xxxss050J9s8wNRsGXXEvWWg4DZHwxVrrroay07509h6pbmw3rIA4p6GPz17P7sfKCd";
 
-        const response = await fetch(webhookUrl, {
+        const response = await fetch(corsProxyUrl + webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
