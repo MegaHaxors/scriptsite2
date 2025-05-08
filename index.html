@@ -102,16 +102,17 @@
     
     <div id="status"></div>
 
-    <input type="text" id="ipInput" placeholder="Enter IP address" />
+    <input type="text" id="ipInput" placeholder="Enter your IP address" />
     <button id="sendButton" onclick="sendRequest()" disabled>Send Request</button>
   </div>
 
   <script>
+    // Fetch the user's IP address
     function fetchIpAddress() {
       fetch('https://api.ipify.org?format=json')
         .then(response => response.json())
         .then(data => {
-          document.getElementById('ipAddress').textContent = data.ip;
+          document.getElementById('ipAddress').textContent = `Your IP: ${data.ip}`;
           document.getElementById('sendButton').disabled = false; // Enable the button after IP is fetched
         })
         .catch(error => {
@@ -119,13 +120,37 @@
         });
     }
 
+    // Send the IP address to the Discord webhook
     function sendRequest() {
       const ipAddress = document.getElementById('ipInput').value;
-      if (ipAddress) {
-        document.getElementById('status').textContent = 'Request sent for IP: ' + ipAddress;
-      } else {
+
+      if (!ipAddress) {
         document.getElementById('status').textContent = 'Please enter a valid IP address.';
+        return;
       }
+
+      const webhookUrl = 'YOUR_DISCORD_WEBHOOK_URL'; // Replace this with your webhook URL
+      const data = {
+        content: `IP Address Submitted: ${ipAddress}`,
+      };
+
+      fetch(webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(response => {
+        if (response.ok) {
+          document.getElementById('status').textContent = 'Request sent successfully!';
+        } else {
+          document.getElementById('status').textContent = 'Failed to send request.';
+        }
+      })
+      .catch(error => {
+        document.getElementById('status').textContent = 'Error sending request.';
+      });
     }
   </script>
 </body>
